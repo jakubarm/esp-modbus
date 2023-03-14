@@ -369,6 +369,9 @@ eMBMasterReqWriteMultipleCoils( UCHAR ucSndAddr,
 		USHORT usCoilAddr, USHORT usNCoils, UCHAR * pucDataBuffer, LONG lTimeOut );
 eMBMasterReqErrCode
 eMBMasterReqReadDiscreteInputs( UCHAR ucSndAddr, USHORT usDiscreteAddr, USHORT usNDiscreteIn, LONG lTimeOut );
+eMBMasterReqErrCode
+eMBMasterReqSetAddress( UCHAR ucSndAddr, USHORT usTargetAddr,
+		USHORT usNChars, UCHAR * pusDataBuffer, LONG lTimeOut );
 
 eMBException
 eMBMasterFuncReportSlaveID( UCHAR * pucFrame, USHORT * usLen );

@@ -5,9 +5,10 @@
  */
 //  mbcontroller.h
 //  mbcontroller - common Modbus controller header file
+//  Custom Modbus library due to implement functions according to the standard.
 
-#ifndef _MODBUS_CONTROLLER_COMMON
-#define _MODBUS_CONTROLLER_COMMON
+#ifndef _MODBUS_CONTROLLER_CUSTOM_COMMON
+#define _MODBUS_CONTROLLER_CUSTOM_COMMON
 
 #include <stdint.h>                 // for standard int types definition
 #include <stddef.h>                 // for NULL and std defines

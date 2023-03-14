@@ -229,6 +229,11 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
             mb_error = eMBMasterReqReadInputRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
                                                         (USHORT)mb_size, (LONG) MB_RESPONSE_TICS );
             break;
+        case MB_FUNC_SET_ADDRESS:
+            mb_error = eMBMasterReqSetAddress( (UCHAR)mb_slave_addr,
+                                               (USHORT)mb_offset, (USHORT)mb_size,
+                                               (UCHAR*)data_ptr, (LONG)MB_RESPONSE_TICS );
+            break;
         default:
             ESP_LOGE(TAG, "%s: Incorrect function in request (%u) ",
                                                     __FUNCTION__, mb_command);

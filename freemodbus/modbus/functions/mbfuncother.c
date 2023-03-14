@@ -43,10 +43,19 @@
 #include "port.h"
 
 /* ----------------------- Modbus includes ----------------------------------*/
-#include "mb.h"
+#include "mb_m.h"
 #include "mbframe.h"
 #include "mbproto.h"
 #include "mbconfig.h"
+
+/* ----------------------- Defines ------------------------------------------*/
+#define MB_PDU_REQ_SET_ADDR_ADDR_OFF           ( MB_PDU_DATA_OFF + 0 )
+#define MB_PDU_REQ_SET_ADDR_VALUES_OFF         ( MB_PDU_DATA_OFF + 2 )
+#define MB_PDU_REQ_SET_ADDR_SIZE_MIN           ( 2 )
+#define MB_PDU_REQ_WRITE_MUL_REGCNT_MAX         ( 0x0078 )
+#define MB_PDU_FUNC_WRITE_MUL_ADDR_OFF          ( MB_PDU_DATA_OFF + 0 )
+#define MB_PDU_FUNC_WRITE_MUL_REGCNT_OFF        ( MB_PDU_DATA_OFF + 2 )
+#define MB_PDU_FUNC_WRITE_MUL_SIZE              ( 4 )
 
 #if MB_SLAVE_RTU_ENABLED || MB_SLAVE_ASCII_ENABLED || MB_TCP_ENABLED
 
@@ -94,6 +103,50 @@ eMBFuncReportSlaveID( UCHAR * pucFrame, USHORT * usLen )
     return MB_EX_NONE;
 }
 
+#endif
+
+
+#if MB_FUNC_SET_ADDRESS_ENABLED > 0
+
+/**
+ * This function will request set address.
+ *
+ * @param ucSndAddr broadcast address
+ * @param usRegAddr new address + data length
+ * @param usNRegs number of bytes in data
+ * @param pusDataBuffer data to be written
+ * @param lTimeOut timeout (-1 will waiting forever)
+ *
+ * @return error code
+ */
+eMBMasterReqErrCode
+eMBMasterReqSetAddress( UCHAR ucSndAddr,
+        USHORT usTargetAddr, USHORT usNChars, UCHAR * pusDataBuffer, LONG lTimeOut )
+{
+    UCHAR                 *ucMBFrame;
+    USHORT                 usCharIndex = 0;
+    eMBMasterReqErrCode    eErrStatus = MB_MRE_NO_ERR;
+
+    if ( ucSndAddr > MB_MASTER_TOTAL_SLAVE_NUM ) eErrStatus = MB_MRE_ILL_ARG;
+    else if ( xMBMasterRunResTake( lTimeOut ) == FALSE ) eErrStatus = MB_MRE_MASTER_BUSY;
+    else
+    {
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterSetDestAddress(ucSndAddr);
+        ucMBFrame[MB_PDU_FUNC_OFF]                     = MB_FUNC_SET_ADDRESS;
+        ucMBFrame[MB_PDU_REQ_SET_ADDR_ADDR_OFF]       = usTargetAddr & 0xFF;
+        ucMBFrame[MB_PDU_REQ_SET_ADDR_ADDR_OFF + 1]   = usNChars & 0xFF;
+        ucMBFrame += MB_PDU_REQ_SET_ADDR_VALUES_OFF;
+        while( usNChars > usCharIndex)
+        {
+            *ucMBFrame++ = pusDataBuffer[usCharIndex++];
+        }
+        vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_SET_ADDR_SIZE_MIN + usNChars );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
+        eErrStatus = eMBMasterWaitRequestFinish( );
+    }
+    return eErrStatus;
+}
 #endif
 
 #endif
