@@ -242,6 +242,7 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
                                                     __FUNCTION__, (unsigned)mb_command);
             mb_error = MB_MRE_NO_REG;
             break;
+        }
     }
 
     // Propagate the Modbus errors to higher level
