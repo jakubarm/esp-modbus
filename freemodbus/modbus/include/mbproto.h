@@ -63,7 +63,7 @@ PR_BEGIN_EXTERN_C
 #define MB_FUNC_SET_ADDRESS                   ( 66 )
 #define MB_FUNC_ERROR                         ( 128u )
 /* ----------------------- Type definitions ---------------------------------*/
-    typedef enum
+typedef enum
 {
     MB_EX_NONE = 0x00,
     MB_EX_ILLEGAL_FUNCTION = 0x01,

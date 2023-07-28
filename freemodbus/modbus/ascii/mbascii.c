@@ -154,11 +154,11 @@ eMBASCIIReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLength )
     UCHAR          *pucMBASCIIFrame = ( UCHAR* ) ucASCIIBuf;
     USHORT          usFrameLength = usRcvBufferPos;
 
-    if( xMBSerialPortGetRequest( &pucMBASCIIFrame, &usFrameLength ) == FALSE )
+    if( xMBPortSerialGetRequest( &pucMBASCIIFrame, &usFrameLength ) == FALSE )
     {
         return MB_EIO;
     }
-    
+
     ENTER_CRITICAL_SECTION(  );
     assert( usFrameLength < MB_SER_PDU_SIZE_MAX );
 
@@ -193,7 +193,7 @@ eMBASCIISend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
     eMBErrorCode    eStatus = MB_ENOERR;
     UCHAR           usLRC;
 
-   
+
     /* Check if the receiver is still in idle state. If not we where too
      * slow with processing the received frame and the master sent another
      * frame on the network. We have to abort sending the frame.
@@ -217,7 +217,7 @@ eMBASCIISend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
         eSndState = STATE_TX_START;
         EXIT_CRITICAL_SECTION(  );
 
-        if ( xMBSerialPortSendResponse( ( UCHAR * ) pucSndBufferCur, usSndBufferCount ) == FALSE )
+        if ( xMBPortSerialSendResponse( ( UCHAR * ) pucSndBufferCur, usSndBufferCount ) == FALSE )
         {
             eStatus = MB_EIO;
         }

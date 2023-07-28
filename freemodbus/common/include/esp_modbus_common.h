@@ -7,6 +7,7 @@
 #ifndef _MB_IFACE_COMMON_H
 #define _MB_IFACE_COMMON_H
 
+#include <inttypes.h>                       // needs to be included for default system types (such as PRIxx)
 #include "driver/uart.h"                    // for UART types
 
 #ifdef __cplusplus
@@ -23,11 +24,11 @@ extern "C" {
 
 // if cannot include esp_check then use custom check macro
 
-#define MB_RETURN_ON_FALSE(a, err_code, tag, format, ...) do {                                         \
-        if (!(a)) {                                                                              \
-            ESP_LOGE(tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
-            return err_code;                                                                               \
-        }                                                                                                  \
+#define MB_RETURN_ON_FALSE(a, err_code, tag, format, ...) do {                              \
+    if (!(a)) {                                                                             \
+        ESP_LOGE(tag, "%s(%" PRIu32 "): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+        return err_code;                                                                    \
+    }                                                                                       \
 } while(0)
 
 #endif
@@ -143,6 +144,7 @@ typedef union {
     // TCP/UDP communication structure
     struct {
         mb_mode_type_t ip_mode;                /*!< Modbus communication mode */
+        uint8_t slave_uid;                     /*!< Modbus slave address field for UID */
         uint16_t ip_port;                      /*!< Modbus port */
         mb_tcp_addr_type_t ip_addr_type;       /*!< Modbus address type */
         void* ip_addr;                         /*!< Modbus address table for connection */

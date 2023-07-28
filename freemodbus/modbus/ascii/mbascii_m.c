@@ -137,7 +137,7 @@ eMBMasterASCIIStart( void )
     ENTER_CRITICAL_SECTION(  );
     eRcvState = STATE_M_RX_IDLE;
     vMBMasterPortSerialEnable( TRUE, FALSE );
-    vMBMasterPortTimersT35Enable(  );
+    xMBMasterPortEventPost(EV_MASTER_READY);
     EXIT_CRITICAL_SECTION(  );
 }
 
@@ -157,7 +157,7 @@ eMBMasterASCIIReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLen
     UCHAR          *pucMBASCIIFrame = ( UCHAR* ) ucMasterASCIIRcvBuf;
     USHORT          usFrameLength = usMasterRcvBufferPos;
 
-    if( xMBMasterSerialPortGetResponse( &pucMBASCIIFrame, &usFrameLength ) == FALSE )
+    if( xMBMasterPortSerialGetResponse( &pucMBASCIIFrame, &usFrameLength ) == FALSE )
     {
         return MB_EIO;
     }
@@ -181,8 +181,8 @@ eMBMasterASCIIReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLen
 
        /* Return the start of the Modbus PDU to the caller. */
        *pucFrame = ( UCHAR * ) & pucMBASCIIFrame[MB_SER_PDU_PDU_OFF];
-   } else {
-        eStatus = MB_EIO;
+    } else {
+      eStatus = MB_EIO;
     }
     EXIT_CRITICAL_SECTION(  );
     return eStatus;
@@ -219,7 +219,7 @@ eMBMasterASCIISend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLengt
         eSndState = STATE_M_TX_START;
         EXIT_CRITICAL_SECTION(  );
 
-        if ( xMBMasterSerialPortSendRequest( ( UCHAR * ) pucMasterSndBufferCur, usMasterSndBufferCount ) == FALSE )
+        if ( xMBMasterPortSerialSendRequest( ( UCHAR * ) pucMasterSndBufferCur, usMasterSndBufferCount ) == FALSE )
         {
             eStatus = MB_EIO;
         }
@@ -274,8 +274,8 @@ xMBMasterASCIIReceiveFSM( void )
             usMasterRcvBufferPos = 0;
             eBytePos = BYTE_HIGH_NIBBLE;
             eRcvState = STATE_M_RX_RCV;
+            eSndState = STATE_M_TX_IDLE;
         }
-        eSndState = STATE_M_TX_IDLE;
         break;
 
         /* A new character is received. If the character is a ':' the input
@@ -437,7 +437,7 @@ xMBMasterASCIITransmitFSM( void )
         /* Notify the task which called eMBMasterASCIISend that the frame has
          * been sent. */
     case STATE_M_TX_NOTIFY:
-        xFrameIsBroadcast = ( ucMasterASCIISndBuf[MB_SEND_BUF_PDU_OFF - MB_SER_PDU_PDU_OFF] 
+        xFrameIsBroadcast = ( ucMasterASCIISndBuf[MB_SEND_BUF_PDU_OFF - MB_SER_PDU_PDU_OFF]
                                                     == MB_ADDRESS_BROADCAST ) ? TRUE : FALSE;
         vMBMasterRequestSetType( xFrameIsBroadcast );
         eSndState = STATE_M_TX_XFWR;

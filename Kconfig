@@ -16,7 +16,7 @@ menu "Modbus configuration"
 
     config FMB_TCP_PORT_MAX_CONN
         int "Maximum allowed connections for TCP stack"
-        range 1 6
+        range 1 8
         default 5
         depends on FMB_COMM_MODE_TCP_EN
         help
@@ -34,6 +34,14 @@ menu "Modbus configuration"
                 Modbus TCP connection timeout in seconds.
                 Once expired the current connection with the client will be closed
                 and Modbus slave will be waiting for new connection to accept.
+    
+    config FMB_TCP_UID_ENABLED
+        bool "Modbus TCP enable UID (Unit Identifier) support"
+        default n
+        depends on FMB_COMM_MODE_TCP_EN
+        help
+                If this option is set the Modbus stack uses UID (Unit Identifier) field in MBAP frame.
+                Else the UID is ignored by master and slave.
 
     config FMB_COMM_MODE_RTU_EN
         bool "Enable Modbus stack support for RTU mode"
@@ -49,8 +57,8 @@ menu "Modbus configuration"
 
     config FMB_MASTER_TIMEOUT_MS_RESPOND
         int "Slave respond timeout (Milliseconds)"
-        default 150
-        range 50 3000
+        default 3000
+        range 150 15000
         help
                 If master sends a frame which is not broadcast, it has to wait sometime for slave response.
                 if slave is not respond in this time, the master will process timeout error.
@@ -58,7 +66,7 @@ menu "Modbus configuration"
     config FMB_MASTER_DELAY_MS_CONVERT
         int "Slave conversion delay (Milliseconds)"
         default 200
-        range 50 400
+        range 150 2000
         help
                 If master sends a broadcast frame, it has to wait conversion time to delay,
                 then master can send next frame.
@@ -99,7 +107,7 @@ menu "Modbus configuration"
     config FMB_SERIAL_ASCII_TIMEOUT_RESPOND_MS
         int "Response timeout for ASCII communication mode (ms)"
         default 1000
-        range 300 2000
+        range 200 5000
         depends on FMB_COMM_MODE_ASCII_EN
         help
                 This option defines response timeout of slave in milliseconds for ASCII communication mode.

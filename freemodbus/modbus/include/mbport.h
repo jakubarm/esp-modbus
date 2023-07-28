@@ -50,12 +50,10 @@ PR_BEGIN_EXTERN_C
 #define MB_PORT_SERIAL_ISR_FLAG ESP_INTR_FLAG_LOWMED
 #endif
 
-#if MB_PORT_TIMER_ISR_IN_IRAM
+#if CONFIG_FMB_TIMER_USE_ISR_DISPATCH_METHOD && MB_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 #define MB_PORT_ISR_ATTR IRAM_ATTR
-#define MB_PORT_TIMER_ISR_FLAG ESP_INTR_FLAG_IRAM
 #else
 #define MB_PORT_ISR_ATTR
-#define MB_PORT_TIMER_ISR_FLAG ESP_INTR_FLAG_LOWMED
 #endif
 
 /* ----------------------- Type definitions ---------------------------------*/
@@ -72,17 +70,18 @@ typedef enum
 #if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED || MB_MASTER_TCP_ENABLED
 typedef enum {
     EV_MASTER_NO_EVENT = 0x0000,
-    EV_MASTER_READY = 0x0001,                   /*!< Startup finished. */
-    EV_MASTER_FRAME_RECEIVED = 0x0002,          /*!< Frame received. */
-    EV_MASTER_EXECUTE = 0x0004,                 /*!< Execute function. */
-    EV_MASTER_FRAME_SENT = 0x0008,              /*!< Frame sent. */
-    EV_MASTER_FRAME_TRANSMIT = 0x0010,          /*!< Frame transmission. */
-    EV_MASTER_ERROR_PROCESS = 0x0020,           /*!< Frame error process. */
-    EV_MASTER_PROCESS_SUCCESS = 0x0040,         /*!< Request process success. */
-    EV_MASTER_ERROR_RESPOND_TIMEOUT = 0x0080,   /*!< Request respond timeout. */
-    EV_MASTER_ERROR_RECEIVE_DATA = 0x0100,      /*!< Request receive data error. */
-    EV_MASTER_ERROR_EXECUTE_FUNCTION = 0x0200   /*!< Request execute function error. */
-} eMBMasterEventType;
+    EV_MASTER_TRANS_START = 0x0001,             /*!< Transaction start flag */
+    EV_MASTER_READY = 0x0002,                   /*!< Startup finished. */
+    EV_MASTER_FRAME_RECEIVED = 0x0004,          /*!< Frame received. */
+    EV_MASTER_EXECUTE = 0x0008,                 /*!< Execute function. */
+    EV_MASTER_FRAME_SENT = 0x0010,              /*!< Frame sent. */
+    EV_MASTER_FRAME_TRANSMIT = 0x0020,          /*!< Frame transmission. */
+    EV_MASTER_ERROR_PROCESS = 0x0040,           /*!< Frame error process. */
+    EV_MASTER_PROCESS_SUCCESS = 0x0080,         /*!< Request process success. */
+    EV_MASTER_ERROR_RESPOND_TIMEOUT = 0x0100,   /*!< Request respond timeout. */
+    EV_MASTER_ERROR_RECEIVE_DATA = 0x0200,      /*!< Request receive data error. */
+    EV_MASTER_ERROR_EXECUTE_FUNCTION = 0x0400   /*!< Request execute function error. */
+} eMBMasterEventEnum;
 
 typedef enum {
     EV_ERROR_INIT,             /*!< No error, initial state. */
@@ -91,6 +90,14 @@ typedef enum {
     EV_ERROR_EXECUTE_FUNCTION, /*!< Execute function error. */
     EV_ERROR_OK                /*!< No error, processing completed. */
 } eMBMasterErrorEventType;
+
+typedef struct _MbEventType {
+    eMBMasterEventEnum eEvent;      /*!< event itself. */
+    uint64_t xTransactionId;        /*!< ID of the transaction */
+    uint64_t xPostTimestamp;        /*!< timestamp of event posted */
+    uint64_t xGetTimestamp;         /*!< timestamp of event get */ 
+} xMBMasterEventType;
+
 #endif
 
 /*! \ingroup modbus
@@ -117,18 +124,21 @@ BOOL            xMBPortEventGet(  /*@out@ */ eMBEventType * eEvent );
 #if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED || MB_MASTER_TCP_ENABLED
 BOOL            xMBMasterPortEventInit( void );
 
-BOOL            xMBMasterPortEventPost( eMBMasterEventType eEvent );
+BOOL            xMBMasterPortEventPost( eMBMasterEventEnum eEvent );
 
-BOOL            xMBMasterPortEventGet(  /*@out@ */ eMBMasterEventType * eEvent );
+BOOL            xMBMasterPortEventGet(  /*@out@ */ xMBMasterEventType * eEvent );
 
-eMBMasterEventType
-                xMBMasterPortFsmWaitConfirmation( eMBMasterEventType eEventMask, ULONG ulTimeout);
+eMBMasterEventEnum
+                xMBMasterPortFsmWaitConfirmation( eMBMasterEventEnum eEventMask, ULONG ulTimeout);
 
 void            vMBMasterOsResInit( void );
 
 BOOL            xMBMasterRunResTake( LONG time );
 
 void            vMBMasterRunResRelease( void );
+
+uint64_t        xMBMasterPortGetTransactionId( void );
+
 #endif // MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED || MB_MASTER_TCP_ENABLED
 /* ----------------------- Serial port functions ----------------------------*/
 
@@ -145,9 +155,9 @@ BOOL            xMBPortSerialGetByte( CHAR * pucByte );
 
 BOOL            xMBPortSerialPutByte( CHAR ucByte );
 
-BOOL            xMBSerialPortGetRequest( UCHAR **ppucMBSerialFrame, USHORT * pusSerialLength ) __attribute__ ((weak));
+BOOL            xMBPortSerialGetRequest( UCHAR **ppucMBSerialFrame, USHORT * pusSerialLength ) __attribute__ ((weak));
 
-BOOL            xMBSerialPortSendResponse( UCHAR *pucMBSerialFrame, USHORT usSerialLength ) __attribute__ ((weak));
+BOOL            xMBPortSerialSendResponse( UCHAR *pucMBSerialFrame, USHORT usSerialLength ) __attribute__ ((weak));
 
 #if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED
 BOOL            xMBMasterPortSerialInit( UCHAR ucPort, ULONG ulBaudRate,
@@ -163,9 +173,11 @@ BOOL            xMBMasterPortSerialGetByte( CHAR * pucByte );
 
 BOOL            xMBMasterPortSerialPutByte( CHAR ucByte );
 
-BOOL            xMBMasterSerialPortGetResponse( UCHAR **ppucMBSerialFrame, USHORT * usSerialLength );
+BOOL            xMBMasterPortSerialGetResponse( UCHAR **ppucMBSerialFrame, USHORT * usSerialLength );
 
-BOOL            xMBMasterSerialPortSendRequest( UCHAR *pucMBSerialFrame, USHORT usSerialLength );
+BOOL            xMBMasterPortSerialSendRequest( UCHAR *pucMBSerialFrame, USHORT usSerialLength );
+
+void            vMBMasterRxFlush( void );
 
 #endif
 

@@ -39,6 +39,7 @@
 #ifndef _MB_CONFIG_H
 #define _MB_CONFIG_H
 
+#include <inttypes.h>  // needs to be included for default system types (such as PRIxx)
 #include "sdkconfig.h" // for KConfig options
 
 #if __has_include("esp_idf_version.h")
@@ -86,6 +87,10 @@ PR_BEGIN_EXTERN_C
 
 #endif
 
+/*! \brief The option is required for support of RTU over TCP.
+ */
+#define MB_TCP_UID_ENABLED                      (  CONFIG_FMB_TCP_UID_ENABLED )
+
 /*! \brief This option defines the number of data bits per ASCII character.
  *
  * A parity bit is added before the stop bit which keeps the actual byte size at 10 bits.
@@ -93,6 +98,9 @@ PR_BEGIN_EXTERN_C
 #ifdef CONFIG_FMB_SERIAL_ASCII_BITS_PER_SYMB
 #define MB_ASCII_BITS_PER_SYMB                  (  CONFIG_FMB_SERIAL_ASCII_BITS_PER_SYMB )
 #endif
+
+#define MB_EVENT_QUEUE_SIZE                     ( CONFIG_FMB_CONTROLLER_NOTIFY_QUEUE_SIZE )
+#define MB_EVENT_QUEUE_TIMEOUT                  ( pdMS_TO_TICKS( CONFIG_FMB_EVENT_QUEUE_TIMEOUT ) )
 
 /*! \brief The character timeout value for Modbus ASCII.
  *
