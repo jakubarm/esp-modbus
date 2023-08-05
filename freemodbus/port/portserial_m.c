@@ -99,6 +99,13 @@ static void vMBMasterRxSemaRelease( void )
 {
     BaseType_t xStatus = pdFALSE;
     xStatus = xSemaphoreGive(xMasterSemaRxHandle);
+    /*
+    int xReadStatus = pxMBMasterPortCBTimerExpired();
+    if (!xReadStatus) {
+        xMBMasterPortEventPost(EV_MASTER_FRAME_RECEIVED);
+        ESP_LOGI("RX_POLL", "Send additional RX ready event.");
+    }
+    */
     if (xStatus != pdTRUE) {
         ESP_LOGD(MB_PORT_TAG,"%s:RX semaphore is free.", __func__);
     }
